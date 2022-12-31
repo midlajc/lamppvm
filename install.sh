@@ -17,10 +17,6 @@
         GREP_OPTIONS='' command grep "$@"
     }
 
-    lamppvm_grep() {
-        GREP_OPTIONS='' command grep "$@"
-    }
-
     lamppvm_default_install_dir() {
         [ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.lamppvm" || printf %s "${XDG_CONFIG_HOME}/lamppvm"
     }
@@ -128,15 +124,42 @@
         fi
     }
 
+    lamppvm_profile_is_bash_or_zsh() {
+        local TEST_PROFILE
+        TEST_PROFILE="${1-}"
+        case "${TEST_PROFILE-}" in
+        *"/.bashrc" | *"/.bash_profile" | *"/.zshrc" | *"/.zprofile")
+            return
+            ;;
+        *)
+            return 1
+            ;;
+        esac
+    }
+
     install_lamppvm_dev() {
         local INSTALL_DIR
         INSTALL_DIR="$(lamppvm_dev_install_dir)"
-        command ln -s "$PROJECT_PATH" "$INSTALL_DIR"
-        command printf '\r=> Add This Script to .zshrc/bashrc. also comment lamppvs satable script'
-        command printf '\r=>\n'
-        command printf "export LAMPP_DIR=$INSTALL_DIR\n"
-        command printf "[ -s '$INSTALL_DIR/lamppvm.sh' ] && \. '$INSTALL_DIR/lamppvm.sh' # This loads lamppvm dev\n"
-        command printf '\r=>\n'
+        if [ -d $INSTALL_DIR ]; then
+            local INSTALL_DIR_SYM_LINK
+            INSTALL_DIR_SYM_LINK="$(command readlink $INSTALL_DIR)"
+            if [ "${INSTALL_DIR_SYM_LINK} = "${PROJECT_PATH} ]; then
+                lamppvm_echo >&2 "Symlink already exist."
+            else
+                if [ -e "${INSTALL_DIR}" ]; then
+                    lamppvm_echo >&2 "File \"${INSTALL_DIR}\" has the same name as installation directory."
+                    exit 1
+                fi
+
+                if ! [ "${LAMPPVM_DIR}" = "$(lamppvm_default_install_dir)" ]; then
+                    lamppvm_echo >&2 "You have \$LAMPPVM_DIR set to \"${LAMPPVM_DIR}\", but that directory does not exist. Check your profile files and environment."
+                    exit 1
+                fi
+            fi
+        else
+            command ln -s "$PROJECT_PATH" "$INSTALL_DIR"
+            lamppvm_echo >&2 "Symlink Created."
+        fi
     }
 
     install_lamppvm_from_git() {
@@ -214,6 +237,8 @@
     lamppvm_do_install() {
         METHOD='dev'
         PROJECT_PATH='/home/midlajc/workspace/projects/lamppvm'
+        local LAMPPVM_PROFILE
+        local PROFILE_INSTALL_DIR
 
         if [ -n "${LAMPPVM_DIR-}" ] && ! [ -d "${LAMPPVM_DIR}" ]; then
             if [ -e "${LAMPPVM_DIR}" ]; then
@@ -232,12 +257,71 @@
         if [ -z "${METHOD}" ]; then
             if lamppvm_has git; then
                 install_lamppvm_from_git
+                PROFILE_INSTALL_DIR="$(lamppvm_install_dir | command sed "s:^$HOME:\$HOME:")"
             else
                 lamppvm_echo >&2 'You need git to install lamppvm'
                 exit 1
             fi
         elif [ "${METHOD}" = 'dev' ]; then
             install_lamppvm_dev
+            PROFILE_INSTALL_DIR="$(lamppvm_dev_install_dir | command sed "s:^$HOME:\$HOME:")"
+        else
+            lamppvm_echo >&2 "The environment variable \$METHOD is set to \"${METHOD}\", which is not recognized as a valid installation method."
+            exit 1
+        fi
+
+        lamppvm_echo
+
+        LAMPPVM_PROFILE="$(lamppvm_detect_profile)"
+
+        SOURCE_STR="\\nexport LAMPPVM_DIR=\"${PROFILE_INSTALL_DIR}\"\\n[ -s \"\$LAMPPVM_DIR/lamppvm.sh\" ] && \\. \"\$LAMPPVM_DIR/lamppvm.sh\"  # This loads lamppvm\\n"
+
+        # shellcheck disable=SC2016
+        COMPLETION_STR='[ -s "$LAMPPVM_DIR/bash_completion.sh" ] && \. "$LAMPPVM_DIR/bash_completion.sh"  # This loads lamppvm bash_completion\n'
+        BASH_OR_ZSH=false
+
+        if [ -z "${LAMPPVM_PROFILE-}" ]; then
+            local TRIED_PROFILE
+            if [ -n "${PROFILE}" ]; then
+                TRIED_PROFILE="${LAMPPVM_PROFILE} (as defined in \$PROFILE), "
+            fi
+            lamppvm_echo "=> Profile not found. Tried ${TRIED_PROFILE-}~/.bashrc, ~/.bash_profile, ~/.zprofile, ~/.zshrc, and ~/.profile."
+            lamppvm_echo "=> Create one of them and run this script again"
+            lamppvm_echo "   OR"
+            lamppvm_echo "=> Append the following lines to the correct file yourself:"
+            command printf "${SOURCE_STR}"
+            lamppvm_echo
+        else
+            if lamppvm_profile_is_bash_or_zsh "${LAMPPVM_PROFILE-}"; then
+                BASH_OR_ZSH=true
+            fi
+            if ! command grep -qc '/lamppvm.sh' "$LAMPPVM_PROFILE"; then
+                lamppvm_echo "=> Appending lamppvm source string to $LAMPPVM_PROFILE"
+                command printf "${SOURCE_STR}" >>"$LAMPPVM_PROFILE"
+            else
+                lamppvm_echo "=> lamppvm source string already in ${LAMPPVM_PROFILE}"
+            fi
+            # shellcheck disable=SC2016
+            if ${BASH_OR_ZSH} && ! command grep -qc '$LAMPPVM_DIR/bash_completion.sh' "$LAMPPVM_PROFILE"; then
+                lamppvm_echo "=> Appending bash_completion.sh source string to $LAMPPVM_PROFILE"
+                command printf "$COMPLETION_STR" >>"$LAMPPVM_PROFILE"
+            else
+                lamppvm_echo "=> bash_completion.sh source string already in ${LAMPPVM_PROFILE}"
+            fi
+        fi
+        if ${BASH_OR_ZSH} && [ -z "${LAMPPVM_PROFILE-}" ]; then
+            lamppvm_echo "=> Please also append the following lines to the if you are using bash/zsh shell:"
+            command printf "${COMPLETION_STR}"
+        fi
+
+        # Source lamppvm
+        # shellcheck source=/dev/null
+        # \. "$PROFILE_INSTALL_DIR/lamppvm.sh"
+
+        lamppvm_echo "=> Close and reopen your terminal to start using lamppvm or run the following to use it now:"
+        command printf "${SOURCE_STR}"
+        if ${BASH_OR_ZSH}; then
+            command printf "${COMPLETION_STR}"
         fi
     }
 
