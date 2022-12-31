@@ -314,10 +314,6 @@
             command printf "${COMPLETION_STR}"
         fi
 
-        # Source lamppvm
-        # shellcheck source=/dev/null
-        # \. "$PROFILE_INSTALL_DIR/lamppvm.sh"
-
         lamppvm_echo "=> Close and reopen your terminal to start using lamppvm or run the following to use it now:"
         command printf "${SOURCE_STR}"
         if ${BASH_OR_ZSH}; then
