@@ -25,11 +25,22 @@
         [ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.lamppvm" || printf %s "${XDG_CONFIG_HOME}/lamppvm"
     }
 
+    lamppvm_default_dev_install_dir() {
+        [ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.lamppvm_dev" || printf %s "${XDG_CONFIG_HOME}/lamppvm_dev"
+    }
+
     lamppvm_install_dir() {
         if [ -n "$LAMPPVM_DIR" ]; then
             printf %s "${LAMPPVM_DIR}"
         else
             lamppvm_default_install_dir
+        fi
+    }
+    lamppvm_dev_install_dir() {
+        if [ -n "$LAMPPVM_DIR" ]; then
+            printf %s "${LAMPPVM_DIR}"
+        else
+            lamppvm_default_dev_install_dir
         fi
     }
 
@@ -117,6 +128,17 @@
         fi
     }
 
+    install_lamppvm_dev() {
+        local INSTALL_DIR
+        INSTALL_DIR="$(lamppvm_dev_install_dir)"
+        command ln -s "$PROJECT_PATH" "$INSTALL_DIR"
+        command printf '\r=> Add This Script to .zshrc/bashrc. also comment lamppvs satable script'
+        command printf '\r=>\n'
+        command printf "export LAMPP_DIR=$INSTALL_DIR\n"
+        command printf "[ -s '$INSTALL_DIR/lamppvm.sh' ] && \. '$INSTALL_DIR/lamppvm.sh' # This loads lamppvm dev\n"
+        command printf '\r=>\n'
+    }
+
     install_lamppvm_from_git() {
         local INSTALL_DIR
         INSTALL_DIR="$(lamppvm_install_dir)"
@@ -190,7 +212,9 @@
     }
 
     lamppvm_do_install() {
-        local METHOD='dev'
+        METHOD='dev'
+        PROJECT_PATH='/home/midlajc/workspace/projects/lamppvm'
+
         if [ -n "${LAMPPVM_DIR-}" ] && ! [ -d "${LAMPPVM_DIR}" ]; then
             if [ -e "${LAMPPVM_DIR}" ]; then
                 lamppvm_echo >&2 "File \"${LAMPPVM_DIR}\" has the same name as installation directory."
@@ -213,7 +237,7 @@
                 exit 1
             fi
         elif [ "${METHOD}" = 'dev' ]; then
-            :
+            install_lamppvm_dev
         fi
     }
 
