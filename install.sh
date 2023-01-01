@@ -143,7 +143,7 @@
         if [ -d $INSTALL_DIR ]; then
             local INSTALL_DIR_SYM_LINK
             INSTALL_DIR_SYM_LINK="$(command readlink $INSTALL_DIR)"
-            if [ "${INSTALL_DIR_SYM_LINK} = "${PROJECT_PATH} ]; then
+            if [ "${INSTALL_DIR_SYM_LINK}" = "${PROJECT_PATH}" ]; then
                 lamppvm_echo >&2 "Symlink already exist."
             else
                 if [ -e "${INSTALL_DIR}" ]; then
@@ -272,7 +272,35 @@
 
         lamppvm_echo
 
+        WORKSPACE_STATUS=false
+        local LAMPP_WORKSPACE_DIR
+
+        lamppvm_echo "=> Do you want a common workspace for lampp projects(otherwise system uses "
+        lamppvm_echo "=> default workspace '/opt/lampp/htdocs' for each lampp version differently !!!)"
+
+        while [ true ]; do
+            command read -p "Input y or n :" yn
+            case $yn in
+            y)
+                WORKSPACE_STATUS=true
+                command read -p "Enter workspace path:" LAMPP_WORKSPACE_DIR
+                break
+                ;;
+            n)
+                break
+                ;;
+            *)
+                echo invalid response
+                continue
+                ;;
+            esac
+        done
+
+        lamppvm_echo
+
         LAMPPVM_PROFILE="$(lamppvm_detect_profile)"
+
+        WORKSPACE_STR="\\nexport LAMPP_WORKSPACE_DIR=\"${LAMPP_WORKSPACE_DIR}\""
 
         SOURCE_STR="\\nexport LAMPPVM_DIR=\"${PROFILE_INSTALL_DIR}\"\\n[ -s \"\$LAMPPVM_DIR/lamppvm.sh\" ] && \\. \"\$LAMPPVM_DIR/lamppvm.sh\"  # This loads lamppvm\\n"
 
@@ -295,12 +323,21 @@
             if lamppvm_profile_is_bash_or_zsh "${LAMPPVM_PROFILE-}"; then
                 BASH_OR_ZSH=true
             fi
+
+            if ${WORKSPACE_STATUS} && ! command grep -qc 'export LAMPP_WORKSPACE_DIR=' "$LAMPPVM_PROFILE"; then
+                lamppvm_echo "=> Appending Workspace path string to $LAMPPVM_PROFILE"
+                command printf "$WORKSPACE_STR" >>"$LAMPPVM_PROFILE"
+            else
+                lamppvm_echo "=> Workspace path string already in ${LAMPPVM_PROFILE}"
+            fi
+
             if ! command grep -qc '/lamppvm.sh' "$LAMPPVM_PROFILE"; then
                 lamppvm_echo "=> Appending lamppvm source string to $LAMPPVM_PROFILE"
                 command printf "${SOURCE_STR}" >>"$LAMPPVM_PROFILE"
             else
                 lamppvm_echo "=> lamppvm source string already in ${LAMPPVM_PROFILE}"
             fi
+            
             # shellcheck disable=SC2016
             if ${BASH_OR_ZSH} && ! command grep -qc '$LAMPPVM_DIR/bash_completion.sh' "$LAMPPVM_PROFILE"; then
                 lamppvm_echo "=> Appending bash_completion.sh source string to $LAMPPVM_PROFILE"
@@ -310,12 +347,23 @@
             fi
         fi
         if ${BASH_OR_ZSH} && [ -z "${LAMPPVM_PROFILE-}" ]; then
-            lamppvm_echo "=> Please also append the following lines to the if you are using bash/zsh shell:"
+            lamppvm_echo "=> And also append the following lines to the if you are using bash/zsh shell:"
             command printf "${COMPLETION_STR}"
         fi
 
+        if ${WORKSPACE_STATUS} && [ -z "${LAMPPVM_PROFILE-}" ]; then
+            lamppvm_echo "=> And please append the following lines to the if you are using bash/zsh shell also:"
+            command printf "${WORKSPACE_STR}"
+        fi
+
         lamppvm_echo "=> Close and reopen your terminal to start using lamppvm or run the following to use it now:"
+
+        if ${WORKSPACE_STATUS}; then
+            command printf "${WORKSPACE_STR}"
+        fi
+
         command printf "${SOURCE_STR}"
+
         if ${BASH_OR_ZSH}; then
             command printf "${COMPLETION_STR}"
         fi
