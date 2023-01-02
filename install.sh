@@ -235,7 +235,7 @@
     }
 
     lamppvm_do_install() {
-        if [ METHOD='dev' ]; then
+        if [ ${METHOD}='dev' ]; then
             PROJECT_PATH='/home/midlajc/workspace/projects/lamppvm'
         fi
         local LAMPPVM_PROFILE
