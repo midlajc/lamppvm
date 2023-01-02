@@ -3,10 +3,10 @@
 
 
 ```sh
-curl -o- https://raw.githubusercontent.com/midlajc/lamppvm/master/install.sh | bash
+curl -o- https://raw.githubusercontent.com/midlajc/lamppvm/v0.0.1/install.sh | bash
 ```
 ```sh
-wget -o- https://raw.githubusercontent.com/midlajc/lamppvm/master/install.sh | bash
+wget -o- https://raw.githubusercontent.com/midlajc/lamppvm/v0.0.1/install.sh | bash
 ```
 
 ### Append this with .bashrc or .zsh
