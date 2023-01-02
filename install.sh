@@ -274,31 +274,32 @@
         lamppvm_echo
 
         WORKSPACE_STATUS=false
-        local LAMPP_WORKSPACE_DIR
 
-        lamppvm_echo "=> Do you want a common workspace for lampp projects(otherwise system uses "
-        lamppvm_echo "=> default workspace '/opt/lampp/htdocs' for each lampp version differently !!!)"
+        if [ -z "${LAMPP_WORKSPACE_DIR}" ]; then
+            lamppvm_echo "=> Do you want a common workspace for lampp projects(otherwise system uses "
+            lamppvm_echo "=> default workspace '/opt/lampp/htdocs' for each lampp version differently !!!)"
 
-        while [ true ]; do
-            command read -p "Input y or n :" yn
-            case $yn in
-            y)
-                WORKSPACE_STATUS=true
-                command read -p "Enter workspace path:" LAMPP_WORKSPACE_DIR
-                break
-                ;;
-            n)
-                break
-                ;;
-            *)
-                echo invalid response
-                continue
-                ;;
-            esac
-        done
+            while [ true ]; do
+                command read -p "Input y or n :" yn
+                case $yn in
+                y)
+                    WORKSPACE_STATUS=true
+                    command read -p "Enter workspace path:" LAMPP_WORKSPACE_DIR
+                    break
+                    ;;
+                n)
+                    break
+                    ;;
+                *)
+                    echo invalid response
+                    continue
+                    ;;
+                esac
+            done
 
-        if ${WORKSPACE_STATUS}; then
-            command mkdir -p "$LAMPP_WORKSPACE_DIR"
+            if ${WORKSPACE_STATUS}; then
+                command mkdir -p "$LAMPP_WORKSPACE_DIR"
+            fi
         fi
 
         lamppvm_echo
