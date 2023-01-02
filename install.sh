@@ -235,8 +235,9 @@
     }
 
     lamppvm_do_install() {
-        METHOD='dev'
-        PROJECT_PATH='/home/midlajc/workspace/projects/lamppvm'
+        if [ METHOD='dev' ]; then
+            PROJECT_PATH='/home/midlajc/workspace/projects/lamppvm'
+        fi
         local LAMPPVM_PROFILE
         local PROFILE_INSTALL_DIR
 
@@ -296,7 +297,7 @@
             esac
         done
 
-        if ${WORKSPACE_STATUS} ;then
+        if ${WORKSPACE_STATUS}; then
             command mkdir -p "$LAMPP_WORKSPACE_DIR"
         fi
 
@@ -341,7 +342,7 @@
             else
                 lamppvm_echo "=> lamppvm source string already in ${LAMPPVM_PROFILE}"
             fi
-            
+
             # shellcheck disable=SC2016
             if ${BASH_OR_ZSH} && ! command grep -qc '$LAMPPVM_DIR/bash_completion.sh' "$LAMPPVM_PROFILE"; then
                 lamppvm_echo "=> Appending bash_completion.sh source string to $LAMPPVM_PROFILE"
