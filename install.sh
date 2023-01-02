@@ -296,6 +296,10 @@
             esac
         done
 
+        if ${WORKSPACE_STATUS} ;then
+            command mkdir -p "$LAMPP_WORKSPACE_DIR"
+        fi
+
         lamppvm_echo
 
         LAMPPVM_PROFILE="$(lamppvm_detect_profile)"
