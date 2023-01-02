@@ -6,7 +6,7 @@
 curl -o- https://raw.githubusercontent.com/midlajc/lamppvm/v0.0.1/install.sh | bash
 ```
 ```sh
-wget -o- https://raw.githubusercontent.com/midlajc/lamppvm/v0.0.1/install.sh | bash
+wget -qO- https://raw.githubusercontent.com/midlajc/lamppvm/v0.0.1/install.sh | bash
 ```
 
 ### Append this with .bashrc or .zsh
