@@ -21,9 +21,9 @@ __lamppvm_commands() {
   current_word="${COMP_WORDS[COMP_CWORD]}"
 
   COMMANDS='
-    help install uninstall use 
-    current list install-composer
-    version versions where'
+    help install uninstall use list
+    ls list-remote ls-remote current
+    install-composer version where'
 
   if [ ${#COMP_WORDS[@]} == 4 ]; then
 
